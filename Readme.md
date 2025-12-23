@@ -44,7 +44,7 @@ satisfying $q > (6d + 1)p, \quad gcd(N, q) = 1 = gcd (p, q),\quad 2d + 1 < N$
 
 - `generate_ternary_poly(N, num_ones, num_neg_ones)`: generates a random polynomial with a fixed number of 1s and -1s called ternary polynomial.
 
-### Key Generation:
+### Key Generation: (done by the Receiver)
 `generate_keys(N, p, q, d)`:
 * choose a random polynomial $f(x) \in T(d+1,d)$ and $g(x) \in T(d,d)$
 * compute $f_q(x)= (f(x))^{-1} \pmod q$ and $f_p(x)= (f(x))^{-1} \pmod p$ (If either inverse fails to exist, discards this f(x) and choose another one).
@@ -52,15 +52,16 @@ satisfying $q > (6d + 1)p, \quad gcd(N, q) = 1 = gcd (p, q),\quad 2d + 1 < N$
 
 Now $f, f_p$ are the private keys and $h$ is the public key.
 
-### Encryption & Decryption:
-* `encrypt(m, h, N, q, d)`:
-    * Generates a random "blinding" polynomial $r$.
-    * Computes $e = (r \cdot h + m) \pmod q$ where is $m$ is the message polynomial.
-* `decrypt(e, f, f_p, N, p, q)`:
-    * Calculates $a = (f \cdot e) \pmod q$
-    * center-lift $a \pmod p$ to $R$, i.e., coefficients lies in $[-q/2+1, q/2]$.
-    * Compute $c = (f_p \cdot b) \pmod p$.
-    * center-lift $c \pmod p$ to $R$, i.e., coefficients lies in $[-p/2+1, p/2]$.
+### Encryption: (done by the Sender)
+`encrypt(m, h, N, q, d)`:
+* Generates a random "blinding" polynomial $r$.
+* Computes $e = (r \cdot h + m) \pmod q$ where is $m$ is the message polynomial.
+### Decryption: (done by the Receiver)
+`decrypt(e, f, f_p, N, p, q)`:
+* Calculates $a = (f \cdot e) \pmod q$
+* center-lift $a \pmod p$ to $R$, i.e., coefficients lies in $[-q/2+1, q/2]$.
+* Compute $c = (f_p \cdot b) \pmod p$.
+* center-lift $c \pmod p$ to $R$, i.e., coefficients lies in $[-p/2+1, p/2]$.
 
 ### Data Handling:
 - `text_to_poly(text, N)`: Converts a string of characters into a binary bitstream, mapping each bit to a polynomial coefficient.
