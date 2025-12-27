@@ -67,16 +67,7 @@ Now $f, f_p$ are the private keys and $h$ is the public key.
 * Compute $c = (f_p \cdot b) \pmod p$.
 * center-lift $c \pmod p$ to $R$, i.e., coefficients lies in $[-p/2+1, p/2]$.
 =======
-### Encryption & Decryption:
-* `encrypt(m, h, N, q, d)`:
-    * Generates a random "blinding" polynomial $r$.
-    * Computes $e = (r \cdot h + m) \pmod q$ where is $m$ is the message polynomial.
-* `decrypt(e, f, f_p, N, p, q)`:
-    * Calculates $a = (f \cdot e) \pmod q$
-    * center-lift $a \pmod p$ to $R$, i.e., coefficients lies in $[-\frac{q}{2}+1, \frac{q}{2}]$.
-    * Compute $c = (f_p \cdot b) \pmod p$.
-    * center-lift $c \pmod p$ to $R$, i.e., coefficients lies in $[-\frac{p}{2}+1, \frac{p}{2}]$.
->>>>>>> origin/main
+
 
 ### Data Handling:
 - `text_to_poly(text, N)`: Converts a string of characters into a binary bitstream, mapping each bit to a polynomial coefficient.
