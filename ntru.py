@@ -10,58 +10,57 @@ import numpy as np
 ########################
 ### Helper Functions ###
 ########################
-def poly_add(poly1, poly2, mod):
-    return np.mod(poly1 + poly2, mod)
+def poly_add(f, g, mod):
+    return np.mod(f + g, mod)
 
-def poly_mul(poly1, poly2, N, mod):
-    """Multiplies two polynomials in the ring R = Z[x] / (x^N - 1)"""
+def poly_mul(f, g, N, mod):
     # Standard polynomial multiplication
-    res = np.convolve(poly1, poly2)
+    res = np.convolve(f, g)
     # Reduce by x^N - 1 (x^N = 1, x^(N+1) = x,  and so on)
     final_res = np.zeros(N)
     for i, val in enumerate(res):
         final_res[i % N] += val
     return np.mod(final_res, mod).astype(int)
 
-def poly_div_mod(poly1, poly2, p):
-    """Robust polynomial long division modulo p"""
-    poly1 = np.trim_zeros(poly1, 'b')
-    poly2 = np.trim_zeros(poly2, 'b')
+def poly_division_mod(f, g, p):
+
+    f = np.trim_zeros(f, 'b')
+    g = np.trim_zeros(g, 'b')
     
-    deg1 = len(poly1) - 1
-    deg2 = len(poly2) - 1
+    deg1 = len(f) - 1
+    deg2 = len(g) - 1
     
     if deg2 < 0: raise ZeroDivisionError()
-    if deg1 < deg2: return np.array([0]), poly1
+    if deg1 < deg2: return np.array([0]), f
     
-    rem = np.copy(poly1) % p
+    rem = np.copy(f) % p
     quot = np.zeros(deg1 - deg2 + 1, dtype=int)
     
     # inverse of leading coefficient of divisor poly
-    inv_lead = pow(int(poly2[-1]), -1, p)
+    inv_lead = pow(int(g[-1]), -1, p)
     
     for i in range(deg1 - deg2, -1, -1):
         if len(rem) < i + deg2 + 1: continue
         factor = (rem[i + deg2] * inv_lead) % p
         quot[i] = factor
         for j in range(deg2 + 1):
-            rem[i + j] = (rem[i + j] - factor * poly2[j]) % p
+            rem[i + j] = (rem[i + j] - factor * g[j]) % p
             
     return quot % p, np.trim_zeros(rem, 'b') % p
 
-def invert_poly(f, N, p):
-    """ Extended Euclidean Algorithm for Polynomials in Zp[x]/(x^N - 1) """
+def inv_of_poly(f, N, p):
+
     # Define x^N - 1
     modulus = np.zeros(N + 1, dtype=int)
     modulus[0] = -1
     modulus[N] = 1   # modulus = x^N -1
     
-    # Standard EEA: old_r = f * old_s + modulus * something
+    # old_r = f * old_s + modulus * something
     old_r, r = (f % p), (modulus % p)
     old_s, s = np.array([1]), np.array([0])
     
     while np.any(r):
-        quot, rem = poly_div_mod(old_r, r, p)
+        quot, rem = poly_division_mod(old_r, r, p)
         old_r, r = r, rem
         
         # s_new = old_s - quot * s
@@ -86,13 +85,10 @@ def invert_poly(f, N, p):
         final_res[i % N] = (final_res[i % N] + old_s[i] * inv_gcd) % p
     return final_res
 
-def invert_poly_pow2(f, N, q):
-    """
-    Computes inverse of f mod (x^N - 1) and mod q (where q is power of 2) using Hensel Lifting.
-    """
+def inv_of_poly_q(f, N, q):
     # Find inverse mod 2 using the EEA function
     try:
-        f_inv = invert_poly(f, N, 2)
+        f_inv = inv_of_poly(f, N, 2)
     except ValueError:
         raise ValueError("f is not invertible mod 2, so it cannot be lifted to mod q")
 
@@ -100,48 +96,42 @@ def invert_poly_pow2(f, N, q):
     current_mod = 2
     while current_mod < q:
         current_mod *= current_mod
-        # Formula: f_inv = f_inv * (2 - f * f_inv) mod current_mod
+        # f_inv = f_inv * (2 - f * f_inv) mod current_mod
         
-        # Calculate (f * f_inv) in the ring
+        #  (f * f_inv) 
         f_prod = poly_mul(f, f_inv, N, current_mod)
         
         # Calculate (2 - f_prod)
-        # Note: 2 is the polynomial [2, 0, 0, ...]
         poly_two = np.zeros(N, dtype=int)
         poly_two[0] = 2
         diff = np.mod(poly_two - f_prod, current_mod)
         
-        # Update f_inv
         f_inv = poly_mul(f_inv, diff, N, current_mod)
         
     return np.mod(f_inv, q).astype(int)
 
 def generate_ternary_poly(N, num_ones, num_neg_ones):
-    """ Generates a random polynomial with a fixed number of 1s and -1s called ternary polynomial """
-    poly = np.zeros(N, dtype=int)
+    x = np.zeros(N, dtype=int)
     indices = np.random.choice(N, num_ones + num_neg_ones, replace=False)
-    poly[indices[:num_ones]] = 1
-    poly[indices[num_ones:]] = -1
-    return poly
+    x[indices[:num_ones]] = 1
+    x[indices[num_ones:]] = -1
+    return x
 
-def center_lift(poly, q):
-    """ Shifts coefficients from [0, q-1] to [-q/2+1, q/2] """
-    new_poly = np.copy(poly)
-    for i in range(len(new_poly)):
-        val = new_poly[i] % q
+def center_lift(x, q):
+    # change coefficients from [0, q-1] to [-q/2+1, q/2] 
+    new_x = np.copy(x)
+    for i in range(len(new_x)):
+        val = new_x[i] % q
         if val > q // 2:
             val -= q
-        new_poly[i] = val
-    return new_poly
+        new_x[i] = val
+    return new_x
 
 #######################
 ###  Data Handling  ###
 #######################
 def text_to_poly(text, N):
-    """
-    Converts a string to a polynomial of degree N-1.
-    Each character is converted to bits, and each bit becomes a coefficient.
-    """
+    
     # Convert text to a bit string
     bits = ''.join(format(ord(i), '08b') for i in text)
     
@@ -159,12 +149,8 @@ def text_to_poly(text, N):
     return poly
 
 def poly_to_text(poly, N):
-    """
-    Converts a polynomial back into a string.
-    Expects coefficients to be 0 or 1.
-    """
+    
     # Convert coefficients back to a bit string
-    # We use center_lift(poly, 3) first to ensure we have 0s and 1s
     bits = "".join(str(abs(int(c))) for c in poly)
     
     # Group into 8-bit chunks and convert to characters
@@ -180,20 +166,19 @@ def poly_to_text(poly, N):
 #######################
 ### NTRU Core Logic ###
 #######################
+
 ### Key Generation
 def generate_keys(N, p, q, d):
-    """
-    Generating Keys f, f_p, h :: private keys f and f_p :: public keys h
-    """
+    
     while True:
         try:
             f = generate_ternary_poly(N, d+1, d)
             g = generate_ternary_poly(N, d, d)
 
             # Compute f_p (inverse of f mod p)
-            f_p = invert_poly(f, N, p)
+            f_p = inv_of_poly(f, N, p)
             # Compute f_q (inverse of f mod q)
-            f_q = invert_poly_pow2(f, N, q)
+            f_q = inv_of_poly_q(f, N, q)
             break
 
         except ValueError:
@@ -207,13 +192,7 @@ def generate_keys(N, p, q, d):
 
 ### Encryption
 def encrypt(m, h, N, q, d):
-    """
-    Encrypts a message polynomial m using public key h
-    e = r * h + m (mod q)
-    m: polynomial with coefficients in {-1, 0, 1} len(m) = N
-    h: public key polynomial
-    r: random binding polynomial
-    """
+    
     # Generate a random binding polynomial r
     r = generate_ternary_poly(N, d, d)
     
@@ -228,18 +207,17 @@ def encrypt(m, h, N, q, d):
 
 ### Decryption
 def decrypt(e, f, f_p, N, p, q):
-    """ Decrypts ciphertext e using private keys f and f_p """
-    # Step 1: a = (f * e) mod q
+
+    # a = (f * e) mod q
     a = poly_mul(f, e, N, q)
     
-    # Step 2: Center-lift a modulo q
-    # This recovers the polynomial p * r * g + f * m without the mod q wrapping
+    # Center-lift a modulo q
     a_lifted = center_lift(a, q)
     
-    # Step 3: c = (f_p * a_lifted) mod p
+    # c = (f_p * a_lifted) mod p
     c = poly_mul(f_p, a_lifted, N, p)
     
-    # Step 4: center lift c (mod p)
+    # center lift c (mod p)
     return center_lift(c, p)
 
 
@@ -257,7 +235,7 @@ if __name__ == "__main__":
 
     # convert origin message to polynomial
     m = text_to_poly(original_text, N)
-    print(f"\nOriginal Message:        {original_text}")
+    print(f"\nOriginal Message:        {poly_to_text(m, N)}")
     if(N < 30):
         print(f"Message Polynomial:        {m}")
 
@@ -284,8 +262,8 @@ if __name__ == "__main__":
     recovered_text = poly_to_text(decrypt_poly, N)
     if(N < 30):
         print(f"Decrypted Polynomial:       {decrypt_poly}")
-        print(f"Recovered Text:             {recovered_text}")
-    
+    print(f"Recovered Text:             {recovered_text}")
+
     # indication of success
     if np.array_equal(m, decrypt_poly):
         print("\nSuccess! The decryption is perfect.")
