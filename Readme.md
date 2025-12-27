@@ -2,24 +2,27 @@
 This project implements the NTRU(N-th degree Truncated polynomial Ring Units) PQC encryption scheme in Python. It allows for the generation of public/private key pairs, encryption of text messages into polynomial ciphertexts, and decryption back to plaintext using lattice-based mathematical principles.
 
 ## Introduction
-* The ring of polynomials in x with coefficients in $\mathbb{Z}$ is <br>
-$$\mathbb{Z}[x] = \{ \sum_{i=0}^{ \infty } a_i x^i : a_i \in \mathbb{Z},  a_i = 0 \text{ for all but finity many}\}$$
+* The ring of polynomials in x with coefficients in $\mathbb{Z}$ is
+
+$$ \mathbb{Z}[x] = \[ \sum_{i=0}^{ \infty } a_i x^i : a_i \in \mathbb{Z},  a_i = 0 \text{ for all but finity many} \] $$
 
 * $\mathbb{Z}_q$ is the finite field where $q$ is prime or power of prime.
 
-$$\mathbb{Z}_q[x] = \{ \sum_{i=0}^{ \infty } a_i x^i : a_i \in ℤ_q,  a_i = 0 \text{ for all but finity many} \} $$
+$$ \mathbb{Z}_q[x] = \[ \sum_{i=0}^{ \infty } a_i x^i : a_i \in ℤ_q,  a_i = 0 \text{ for all but finity many} \] $$
 
 * N-th degree Truncated Polynomial Ring (of rank N)
-$$R = \mathbb{Z}[x]/(x^N -1) = \{ a_0 + a_1 x + \cdots + a_{N−1}x^{N−1} : a_0 , a_1 , … , a_{N−1} \in \mathbb{Z} \} $$
 
-* N-th Degree Truncated Polynomial Ring over a finite field $ℤ_q$ <br>
-$$R_q = \mathbb{Z}_q[x]/(x^N -1) = \{ a_0 + a_1 x + \cdots + a_{N−1}x^{N−1} : a_0 , a_1 , … , a_{N−1} \in \mathbb{Z}_q \} $$
+$$R = \mathbb{Z}[x]/(x^N -1) = \[ a_0 + a_1 x + \cdots + a_{N−1}x^{N−1} : a_0 , a_1 , … , a_{N−1} \in \mathbb{Z} \] $$
+
+* N-th Degree Truncated Polynomial Ring over a finite field $ℤ_q$
+
+$$R_q = \mathbb{Z}_q[x]/(x^N -1) = \[ a_0 + a_1 x + \cdots + a_{N−1}x^{N−1} : a_0 , a_1 , … , a_{N−1} \in \mathbb{Z}_q \] $$
 
 #### Definition : Center-lift
 For any polynomial $f(x) \in R_q$ center-lift of $f$ means shifting coefficients from $[0, q-1]$ to $[-\frac{q}{2} +1 , \frac{q}{2}]$
 
 #### Definition : $T(d_1, d_2)$
-$T(d_1, d_2)$ = {$f(x) \in R_q$ : $f(x)$  has  $d_1$  many coefficients equal to 1, $d_2$ many coefficients equal to −1, and the rest are all 0}.<br>
+$T(d_1, d_2)$ = { $f(x) \in R_q$ : $f(x)$  has  $d_1$  many coefficients equal to 1, $d_2$ many coefficients equal to −1, and the rest are all 0 }.<br>
 Polynomials in $T(d_1, d_2)$ are called ternary polynomials.
 
 ## Parameters Overview
@@ -40,7 +43,7 @@ satisfying $q > (6d + 1)p, \quad gcd(N, q) = 1 = gcd (p, q),\quad 2d + 1 < N$
 
 - `invert_poly_pow2(f, N, q)`: using Hensel Lifting to find the inverse of $f$ modulo 2, then lifting to  $f$ mod $q$, $f_q$.
 
-- `center_lift(poly, mod)`: shifts coefficients from the range $[0, mod-1]$ to $[-mod/2+1, mod/2]$. This "centers" the values, which is the secret to error-free decryption in lattice-based math.
+- `center_lift(poly, mod)`: shifts coefficients from the range $[0, mod-1]$ to $[-\frac{mod}{2}+1, \frac{mod}{2}]$. This "centers" the values, which is the secret to error-free decryption in lattice-based math.
 
 - `generate_ternary_poly(N, num_ones, num_neg_ones)`: generates a random polynomial with a fixed number of 1s and -1s called ternary polynomial.
 
@@ -52,6 +55,7 @@ satisfying $q > (6d + 1)p, \quad gcd(N, q) = 1 = gcd (p, q),\quad 2d + 1 < N$
 
 Now $f, f_p$ are the private keys and $h$ is the public key.
 
+<<<<<<< HEAD
 ### Encryption: (done by the Sender)
 `encrypt(m, h, N, q, d)`:
 * Generates a random "blinding" polynomial $r$.
@@ -62,6 +66,17 @@ Now $f, f_p$ are the private keys and $h$ is the public key.
 * center-lift $a \pmod p$ to $R$, i.e., coefficients lies in $[-q/2+1, q/2]$.
 * Compute $c = (f_p \cdot b) \pmod p$.
 * center-lift $c \pmod p$ to $R$, i.e., coefficients lies in $[-p/2+1, p/2]$.
+=======
+### Encryption & Decryption:
+* `encrypt(m, h, N, q, d)`:
+    * Generates a random "blinding" polynomial $r$.
+    * Computes $e = (r \cdot h + m) \pmod q$ where is $m$ is the message polynomial.
+* `decrypt(e, f, f_p, N, p, q)`:
+    * Calculates $a = (f \cdot e) \pmod q$
+    * center-lift $a \pmod p$ to $R$, i.e., coefficients lies in $[-\frac{q}{2}+1, \frac{q}{2}]$.
+    * Compute $c = (f_p \cdot b) \pmod p$.
+    * center-lift $c \pmod p$ to $R$, i.e., coefficients lies in $[-\frac{p}{2}+1, \frac{p}{2}]$.
+>>>>>>> origin/main
 
 ### Data Handling:
 - `text_to_poly(text, N)`: Converts a string of characters into a binary bitstream, mapping each bit to a polynomial coefficient.
